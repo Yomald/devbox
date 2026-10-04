@@ -30,8 +30,9 @@ JDTLS_URL="https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones
 
 curl -fL "${JDTLS_URL}" |
     tar -xzf - \
-    -C "${JDTLS_DIR}" \
-    --strip-components=1
+    -C "${JDTLS_DIR}"
+
+ln -s "${JDTLS_DIR}/bin/jdtls" "${LSP_HOME}/jdtls"
 
 # Lombok
 curl -fL \
