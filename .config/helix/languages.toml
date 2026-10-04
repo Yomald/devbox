@@ -1,0 +1,15 @@
+[[language]]
+name = "java"
+language-servers = [ "jdtls" ]
+scope = "source.java"
+injection-regex = "java"
+file-types = ["java"]
+roots = ["pom.xml", "build.gradle", ]
+
+[language-server.jdtls]
+command = "jdtls-wrapper"
+args = ["--jvm-arg=-javaagent:$HOME/.lsp/java/lombok.jar"]
+
+[language-server.jdtls.config]
+java.inlayHints.parameterNames.enabled = "all"
+extendedClientCapabilities.classFileContentsSupport = true
