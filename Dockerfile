@@ -132,8 +132,8 @@ RUN chmod +x /tmp/setup-lsp.sh \
     rm -f /tmp/setup-lsp.sh
 
 RUN bash -c 'source "/home/${USERNAME}/.sdkman/bin/sdkman-init.sh" && \
-    sdk install java 8.0.502-tem' && \
+    sdk install java 8.0.502-tem && \
     sdk install java 25.0.4-tem && \
-    sdk install java 21.0.12-tem
+    sdk install java 21.0.12-tem'
 
 CMD ["/bin/bash", "-l"]
