@@ -89,7 +89,6 @@ ARG PI_PACKAGE=@earendil-works/pi-coding-agent
 
 RUN npm install --global "${PI_PACKAGE}" && \
     npm cache clean --force
-RUN npm install --global t3@latest
 
 # ---------------------------------------------------------------------------
 # SDKMAN!
@@ -101,7 +100,7 @@ RUN npm install --global t3@latest
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-RUN curl -fsSL https://opencode.ai/install | bash
+RUN curl -fsSL https://opencode.ai/v2/install | bash
 RUN curl -s "https://get.sdkman.io" | bash
 
 # Make SDKMAN available in interactive bash shells.
@@ -116,8 +115,6 @@ RUN printf '\n# SDKMAN!\n' >> "${HOME}/.bashrc" && \
 ENV SHELL=/bin/bash
 ENV EDITOR=hx
 ENV VISUAL=hx
-ENV T3CODE_HOME=/home/${USERNAME}/.t3
-ENV T3_BOOT_SERVICE_UNIT=t3code.service
 ENV LSP_HOME=/home/${USERNAME}/.lsp
 ENV PATH="/home/${USERNAME}/.lsp:/home/${USERNAME}/.local/bin:${PATH}"
 
@@ -135,8 +132,8 @@ RUN chmod +x /tmp/setup-lsp.sh \
     rm -f /tmp/setup-lsp.sh
 
 RUN bash -c 'source "/home/${USERNAME}/.sdkman/bin/sdkman-init.sh" && \
-    sdk install java 21.0.12-tem && \
+    sdk install java 8.0.502-tem' && \
     sdk install java 25.0.4-tem && \
-    sdk install java 8.0.502-tem'
+    sdk install java 21.0.12-tem
 
 CMD ["/bin/bash", "-l"]
