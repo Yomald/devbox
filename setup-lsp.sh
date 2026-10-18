@@ -7,7 +7,7 @@ JDTLS_DIR="${LSP_HOME}/jdtls_dir"
 mkdir -p "${LSP_HOME}" "${LSP_HOME}/java" "${JDTLS_DIR}"
 
 # Go language server
-go install golang.org/x/tools/gopls@latest
+go install golang.org/x/tools/gopls@v0.23.0
 ln -sf "$(go env GOPATH)/bin/gopls" "${LSP_HOME}/gopls"
 
 # Python language servers
