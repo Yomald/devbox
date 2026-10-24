@@ -48,6 +48,8 @@ RUN dnf --refresh -y install \
         python3 \
         python3-pip \
         nodejs \
+        iputils \
+        iproute \
         npm \
         helix
 

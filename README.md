@@ -1,300 +1,103 @@
 # Fedora Development Container
 
-A Fedora-based development environment with compilers, build tools, language runtimes, command-line utilities, Java SDKs managed by SDKMAN!, and several language servers for use with editor integrations.
+A Fedora-based development environment with a collection of common command-line tools, the [Pi coding agent](https://github.com/earendil-works/pi), OpenCode, SDKMAN!, and Java language-server support.
 
-## Included tooling
+## Included tools
 
-The image includes:
+- **Build and development:** GCC, G++, Make, CMake, Ninja, Go, Python, Node.js, npm
+- **CLI utilities:** Git, curl, wget, HTTPie, jq, ripgrep, fd, tree, tmux, and more
+- **Editors:** Helix (`hx`)
+- **AI coding tools:** Pi and OpenCode
+- **Java tooling:** SDKMAN! with Java 8, 21, and 25; JDTLS wrapper and LSP setup
 
-- GCC and G++
-- CMake and Ninja
-- Git, Curl, Wget, OpenSSH, Rsync
-- Go
-- Python 3 and pip
-- Node.js and npm
-- Java SDKs through SDKMAN!
-- ShellCheck
-- jq, ripgrep, fd, tree, tmux, less, file, and procps
-- Helix editor
-- OpenCode
-- Pi coding agent
-- T3 Code
+## Requirements
 
-The configured language servers are installed under:
+Install [Docker](https://docs.docker.com/get-docker/) or [Podman](https://podman.io/).
 
-```text
-/home/user/.lsp
-```
+## Build
 
-## Language servers
+From the directory containing the `Dockerfile`:
 
-The build creates the following `.lsp` entries:
-
-| Entry | Purpose |
-|---|---|
-| `gopls` | Go language server |
-| `ruff` | Python linting and language-server functionality |
-| `ty` | Python type checking |
-| `typescript-language-server` | TypeScript and JavaScript language server |
-| `typescript-language-server_dir/` | Local npm installation directory |
-| `jdtls_dir/` | Eclipse JDT Language Server |
-| `java` | Entry point or symlink for the Java language server |
-| `lombok.jar` | Lombok Java agent |
-| `jdtls-wrapper` | Manually maintained JDTLS launcher |
-
-The expected layout is:
-
-```text
-.lsp/
-├── java/
-│   └── lombok.jar
-├── gopls
-├── jdtls-wrapper
-├── jdtls_dir/
-├── ruff
-├── ty
-├── typescript-language-server
-└── typescript-language-server_dir/
-```
-
-## Repository layout
-
-```text
-.
-├── Dockerfile
-├── README.md
-├── setup-lsp.sh
-└── jdtls-wrapper
-```
-
-`setup-lsp.sh` installs and configures generated language-server files. The `jdtls-wrapper` file is kept in the repository and copied into the image manually.
-
-## Building the image
-
-Build with Docker:
-
-```bash
-docker build -t devbox .
+```sh
+docker build -t fedora-dev .
 ```
 
 Or with Podman:
 
-```bash
-podman build -t devbox .
+```sh
+podman build -t fedora-dev .
 ```
 
-The default Pi package is:
+The image installs Pi from npm. To override the package:
 
-```text
-@earendil-works/pi-coding-agent
+```sh
+docker build \
+  --build-arg PI_PACKAGE=@earendil-works/pi-coding-agent \
+  -t fedora-dev .
 ```
 
-To override it during the build:
+The default package is `@earendil-works/pi-coding-agent`.
 
-```bash
-podman build \
-    --build-arg PI_PACKAGE=@earendil-works/pi-coding-agent \
-    -t devbox .
+## Run
+
+Start an interactive container:
+
+```sh
+docker run --rm -it fedora-dev
 ```
 
-## Running the container
+To work on a project from your host, mount its directory into the container:
 
-Start an interactive shell:
-
-```bash
-podman run --rm -it devbox
-```
-
-With the current directory mounted:
-
-```bash
-podman run --rm -it \
-    -v "$PWD:/workspace:Z" \
-    -w /workspace \
-    devbox
-```
-
-For Docker, omit `:Z` unless SELinux labeling is required:
-
-```bash
+```sh
 docker run --rm -it \
-    -v "$PWD:/workspace" \
-    -w /workspace \
-    devbox
+  -v "$PWD:/workspace" \
+  -w /workspace \
+  fedora-dev
 ```
 
-The container starts with:
+The container starts a login Bash shell. Run tools such as `pi`, `opencode`, `hx`, `go`, `python3`, and `java` from the shell.
 
-```bash
-/bin/bash -l
+## User configuration
+
+The image creates a non-root user named `user` with UID and GID `1000` by default. Override these values at build time to match your host account:
+
+```sh
+docker build \
+  --build-arg USERNAME=dev \
+  --build-arg USER_UID="$(id -u)" \
+  --build-arg USER_GID="$(id -g)" \
+  -t fedora-dev .
 ```
 
-The default user is:
+The user has passwordless `sudo` access inside the container.
 
-```text
-user
-```
+## Files required in the build context
 
-The user has passwordless `sudo` access.
+The Dockerfile expects these files and directories alongside it:
 
-## Java SDKs
+- `.config/` — copied to the user’s `~/.config`
+- `setup-lsp.sh` — installs/configures language-server components
+- `jdtls-wrapper` — installed under `~/.lsp` and linked as `~/.lsp/java`
 
-SDKMAN! is installed for the normal development user. The image installs:
+Ensure these are present before building.
 
-```text
-Java 21.0.12-tem
-Java 25.0.4-tem
-Java 8.0.502-tem
-```
+## Java versions
 
-SDKMAN! is initialized automatically in interactive Bash shells.
+SDKMAN! is installed for the normal user, along with these Java versions:
 
-To inspect installed Java versions:
+- `8.0.502-tem`
+- `25.0.4-tem`
+- `21.0.12-tem`
 
-```bash
-sdk list java
-```
+SDKMAN! is initialized in interactive Bash shells. Select a version inside the container with:
 
-To select a Java version for the current shell:
-
-```bash
+```sh
 sdk use java 21.0.12-tem
-```
-
-To make a version the default:
-
-```bash
-sdk default java 21.0.12-tem
-```
-
-## Language-server setup
-
-`setup-lsp.sh` creates the `.lsp` directory and installs the language servers.
-
-### Go
-
-```bash
-go install golang.org/x/tools/gopls@latest
-```
-
-The resulting executable is linked into:
-
-```text
-~/.lsp/gopls
-```
-
-### Python
-
-The following tools are installed with pip:
-
-```bash
-python3 -m pip install --user --upgrade ruff ty
-```
-
-They are linked into:
-
-```text
-~/.lsp/ruff
-~/.lsp/ty
-```
-
-### TypeScript
-
-The TypeScript language server is installed locally under:
-
-```text
-~/.lsp/typescript-language-server_dir
-```
-
-The executable is exposed as:
-
-```text
-~/.lsp/typescript-language-server
-```
-
-### Eclipse JDT Language Server
-
-JDTLS is downloaded from the Eclipse milestone release:
-
-```text
-https://www.eclipse.org/downloads/download.php?file=/jdtls/milestones/1.61.0/jdt-language-server-1.61.0-202609031315.tar.gz
-```
-
-The archive is extracted into:
-
-```text
-~/.lsp/jdtls_dir
-```
-
-The download uses `curl -fL` because the Eclipse URL redirects to a download mirror.
-
-### Lombok
-
-Lombok is downloaded to:
-
-```text
-~/.lsp/java/lombok.jar
-```
-
-The setup script uses:
-
-```bash
-curl -fL \
-    -o "${LSP_HOME}/java/lombok.jar" \
-    https://projectlombok.org/downloads/lombok.jar
-```
-
-The JDTLS wrapper should launch Java with Lombok as a Java agent:
-
-```bash
--javaagent:"${HOME}/.lsp/java/lombok.jar"
-```
-
-## Environment variables
-
-The image defines:
-
-```text
-COLORTERM=truecolor
-TERM=xterm
-SHELL=/bin/bash
-EDITOR=hx
-VISUAL=hx
-T3CODE_HOME=/home/user/.t3
-T3_BOOT_SERVICE_UNIT=t3code.service
-LSP_HOME=/home/user/.lsp
-```
-
-The language-server directory is included in `PATH`:
-
-```text
-/home/user/.lsp
-```
-
-The user-local Python binary directory is also included:
-
-```text
-/home/user/.local/bin
-```
-
-## Rebuilding after changes
-
-Rebuild the image after modifying the Dockerfile or language-server setup:
-
-```bash
-podman build --no-cache -t devbox .
-```
-
-For a normal incremental rebuild:
-
-```bash
-podman build -t devbox .
 ```
 
 ## Notes
 
-- The image uses `fedora:latest`, so package versions may change between builds.
-- Language servers installed with `@latest`, pip upgrades, or floating download URLs may also change between builds.
-- The JDTLS version is currently pinned to milestone `1.61.0`.
-- The `jdtls-wrapper` file is intentionally maintained manually and copied into `.lsp` during the image build.
-- The `.lsp` directory itself does not need to be copied from the host. It is generated by `setup-lsp.sh`.
+- The image uses `fedora:latest`, so a future build may install newer Fedora packages or behave differently. For reproducible builds, consider pinning the Fedora base image and tool versions.
+- The image includes development utilities and tools that can access files and run commands as the container user. Mount only directories you intend to make available to the container.
+- Pi’s npm package is installed globally. The project’s Pi documentation notes that npm installation does not pin transitive dependencies. <citation src="1"></citation>
+- This image is intended as a development environment, not a minimal runtime image.
